@@ -1,1 +1,122 @@
+<html>
 
+<head>
+    <title></title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+
+<body>
+    <div class="col-md-12" style="display: none">
+        <div id="map-alamat" style="height:300px; border-radius:10px;"></div>
+        <div class="col-md-6">
+            <input type="text" id="latitude" class="form-control"
+                placeholder="Latitude" readonly>
+        </div>
+        <div class="col-md-6">
+            <input type="text" id="longitude" class="form-control"
+                placeholder="Longitude" readonly>
+        </div>
+        <textarea class="form-control" id="full_address" rows="3" readonly></textarea>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map, marker;
+
+        map = L.map('map-alamat').setView([3.5952, 98.6722], 13); // default medan
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        // klik map
+        map.on('click', function (e) {
+            let lat = e.latlng.lat;
+            let lng = e.latlng.lng;
+
+            $('#latitude').val(lat);
+            $('#longitude').val(lng);
+
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lng]).addTo(map);
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                .then(res => res.json())
+                .then(data => {
+                    $('#full_address').val(data.display_name);
+                });
+        });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                let lat = pos.coords.latitude;
+                let lng = pos.coords.longitude;
+
+                map.setView([lat, lng], 15);
+                marker = L.marker([lat, lng]).addTo(map);
+
+                $('#latitude').val(lat);
+                $('#longitude').val(lng);
+
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        $('#full_address').val(data.display_name);
+                        console.log($('#full_address').val(), $('#latitude').val(), $('#longitude').val())
+                    });
+            });
+        }
+
+        $('#add-address').on('click', function() {
+
+            let btn = $(this);
+            let formData = new FormData();
+
+            formData.append('full_address', $('#full_address').val());
+            formData.append('latitude', $('#latitude').val());
+            formData.append('longitude', $('#longitude').val());
+            
+
+            // $.ajax({
+            //     url: '/alamat/store',
+            //     method: 'POST',
+            //     data: formData,
+            //     processData: false,
+            //     contentType: false,
+            //     headers: {
+            //         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            //     },
+
+            //     success: function(res) {
+            //         Swal.fire({
+            //             icon: 'success',
+            //             title: 'Berhasil',
+            //             text: res.message ?? 'Profile updated successfully'
+            //         });
+            //         location.reload();
+            //     },
+
+            //     error: function(xhr) {
+            //         let msg = 'Terjadi kesalahan';
+
+            //         if (xhr.responseJSON?.errors) {
+            //             msg = Object.values(xhr.responseJSON.errors).join('\n');
+            //         }
+
+            //         Swal.fire({
+            //             icon: 'warning',
+            //             title: 'Gagal',
+            //             text: msg
+            //         });
+            //     },
+
+            //     complete: function() {
+            //         btn.prop('disabled', false).text('Update Profile');
+            //     }
+            // });
+        });
+    </script>
+</body>
+
+</html>
